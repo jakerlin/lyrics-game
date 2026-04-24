@@ -1,3 +1,5 @@
+from flask import session
+app.secret_key = 'abc123'
 # -*- coding: utf-8 -*-
 from flask import Flask, request, render_template_string
 import random
@@ -23,7 +25,33 @@ HTML = """
 <p>{{result}}</p>
 """
 
-current_song = random.choice(SONG_DB)
+@app.route('/', methods=['GET','POST'])
+def index():
+    result = ""
+
+    # 第一次访问时生成题目
+    if 'song' not in session:
+        session['song'] = random.choice(SONG_DB)
+
+    if request.method == 'POST':
+        t = request.form.get('title','')
+        a = request.form.get('artist','')
+
+        song = session['song']
+
+        if t == song['title'] and a == song['artist']:
+            result = "✅ 正确"
+        else:
+            result = f"❌ 正确答案：{song['title']} - {song['artist']}"
+
+        # 下一题
+        session['song'] = random.choice(SONG_DB)
+
+    return render_template_string(
+        HTML,
+        lyrics=session['song']['lyrics'],
+        result=result
+    )
 
 @app.route('/', methods=['GET','POST'])
 def index():
